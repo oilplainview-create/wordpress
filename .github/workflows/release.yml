@@ -15,6 +15,7 @@ jobs:
           tools: composer:v2
       - name: WordPress 설치 ZIP 생성
         run: |
+          composer require --no-update "sendgo/php:${GITHUB_REF_NAME#v}"
           composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
           mkdir -p /tmp/sendgo
           cp -R sendgo.php uninstall.php readme.txt LICENSE includes assets languages vendor /tmp/sendgo/
