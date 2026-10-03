@@ -1,0 +1,31 @@
+name: GitHub Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      - name: WordPress 설치 ZIP 생성
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+          mkdir -p /tmp/sendgo
+          cp -R sendgo.php uninstall.php readme.txt LICENSE includes assets languages vendor /tmp/sendgo/
+          cd /tmp
+          zip -qr "$GITHUB_WORKSPACE/sendgo-${GITHUB_REF_NAME#v}.zip" sendgo
+      - name: 릴리스 게시
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" --notes-file RELEASE_NOTES.md
+          fi
+          gh release upload "$RELEASE_TAG" "sendgo-${RELEASE_TAG#v}.zip" --clobber
